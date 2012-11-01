@@ -166,7 +166,7 @@ namespace AllocationUtils
     }
   };
 
-  template< class T, template<typename X> class allocator = std::allocator >
+  template< class T, template<typename X> class allocator >
   class grid_impl
   {
   protected:
@@ -174,16 +174,16 @@ namespace AllocationUtils
     size_t m_linearSz;
     T* m_data;
 
-    typedef grid_impl<T, allocator> _TGrid;
+    typedef grid_impl<T, allocator> _TGridImpl;
 
-    grid_impl(size_t n1, size_t n2)
-       : m_linearSz(n1 * n2), m_data(0)
+    grid_impl(size_t linesize)
+       : m_linearSz(linesize), m_data(0)
      {
        m_data = m_allocator.allocate(m_linearSz);
        uninit_fill_n(m_data, m_linearSz);
      }
 
-    grid_impl(const _TGrid& another)
+    grid_impl(const _TGridImpl& another)
       : m_linearSz(another.m_linearSz)
     {
       m_data = m_allocator.allocate(m_linearSz);
@@ -196,7 +196,7 @@ namespace AllocationUtils
       m_allocator.deallocate(m_data, m_linearSz);
     }
 
-    _TGrid& operator= (const _TGrid& another)
+    _TGridImpl& operator= (const _TGridImpl& another)
     {
      if (this == &another)
        return *this;
@@ -206,45 +206,34 @@ namespace AllocationUtils
      return *this;
     }
 
-    bool operator== (const _TGrid& another) const
+    bool operator== (const _TGridImpl& another) const
     {
      return std::equal(m_data, m_data + m_linearSz, another.m_data);
     }
 
-    bool operator!= (const _TGrid& another) const
+    bool operator!= (const _TGridImpl& another) const
     {
      return !this->operator== (another);
     }
   };
 
   template< class T, template<typename X> class allocator = std::allocator >
-  class grid2D
+  class grid2D : public grid_impl<T, allocator>
   {
-    mutable allocator<T> m_allocator;
-    size_t m_n1, m_n2, m_linearSz;
-    T* m_data;
+    size_t m_n1, m_n2;
   public:
 
     typedef grid2D<T, allocator> _TGrid;
+    typedef grid_impl<T, allocator> _TGridImpl;
 
     grid2D(size_t n1, size_t n2)
-      : m_n1(n1), m_n2(n2), m_linearSz(m_n1 * m_n2), m_data(0)
+      : _TGridImpl(n1 * n2), m_n1(n1), m_n2(n2)
     {
-      m_data = m_allocator.allocate(m_linearSz);
-      uninit_fill_n(m_data, m_linearSz);
     }
 
     grid2D(const _TGrid& another)
-      : m_n1(another.m_n1), m_n2(another.m_n2), m_linearSz(m_n1 * m_n2)
+      : _TGridImpl(another), m_n1(another.m_n1), m_n2(another.m_n2)
     {
-      m_data = m_allocator.allocate(m_linearSz);
-      std::uninitialized_copy(another.m_data, another.m_data + m_linearSz, this->m_data);
-    }
-
-    ~grid2D()
-    {
-      destroy(m_data, m_data + m_linearSz);
-      m_allocator.deallocate(m_data, m_linearSz);
     }
 
     _TGrid& operator= (const _TGrid& another)
@@ -255,7 +244,7 @@ namespace AllocationUtils
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
         throw AllocationUtils::array_size_error();
 
-      std::copy(another.m_data, another.m_data + m_linearSz, this->m_data);
+      _TGridImpl::operator= (another);
 
       return *this;
     }
@@ -265,7 +254,7 @@ namespace AllocationUtils
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
         throw AllocationUtils::array_size_error();
 
-      return std::equal(m_data, m_data + m_linearSz, another.m_data);
+      return _TGridImpl::operator== (another);
     }
 
     bool operator!= (const _TGrid& another) const
@@ -275,43 +264,32 @@ namespace AllocationUtils
 
     const T& operator() (size_t i, size_t j) const
     {
-      return m_data[i + m_n1 * j];
+      return _TGridImpl::m_data[i + m_n1 * j];
     }
 
     T& operator() (size_t i, size_t j)
     {
-      return m_data[i + m_n1 * j];
+      return _TGridImpl::m_data[i + m_n1 * j];
     }
   };
 
   template< class T, template<typename X> class allocator = std::allocator >
-  class grid3D
+  class grid3D : public grid_impl<T, allocator>
   {
-    mutable ArrayMemoryHelper< T, allocator > m_memHelper;
     size_t m_n1, m_n2, m_n3;
-    T*** m_data;
   public:
 
     typedef grid3D<T, allocator> _TGrid;
+    typedef grid_impl<T, allocator> _TGridImpl;
 
     grid3D(size_t n1, size_t n2, size_t n3)
-      : m_n1(n1), m_n2(n2), m_n3(n3), m_data(0)
+      : _TGridImpl(n1 * n2 * n3), m_n1(n1), m_n2(n2), m_n3(n3)
     {
-      m_data = m_memHelper.allocate(m_n1, m_n2, m_n3);
-      m_memHelper.create(m_data, m_n1, m_n2, m_n3);
     }
 
     grid3D(const _TGrid& another)
-      : m_n1(another.m_n1), m_n2(another.m_n2), m_n3(another.m_n3)
+      :  _TGridImpl(another), m_n1(another.m_n1), m_n2(another.m_n2), m_n3(another.m_n3)
     {
-      m_data = m_memHelper.allocate(m_n1, m_n2, m_n3);
-      m_memHelper.uninitCopy(this->m_data, another.m_data, m_n1, m_n2, m_n3);
-    }
-
-    ~grid3D()
-    {
-      m_memHelper.destroy(m_data, m_n1, m_n2, m_n3);
-      m_memHelper.deallocate(m_data, m_n1, m_n2, m_n3);
     }
 
     _TGrid& operator= (const _TGrid& another)
@@ -322,7 +300,7 @@ namespace AllocationUtils
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
         throw AllocationUtils::array_size_error();
 
-      m_memHelper.copy(this->m_data, another.m_data, m_n1, m_n2, m_n3);
+      _TGridImpl::operator= (another);
 
       return *this;
     }
@@ -332,7 +310,7 @@ namespace AllocationUtils
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
         throw AllocationUtils::array_size_error();
 
-      return m_memHelper.equal(m_data, another.m_data, m_n1 , m_n2, m_n3);
+      return _TGridImpl::operator== (another);
     }
 
     bool operator!= (const _TGrid& another) const
@@ -342,12 +320,12 @@ namespace AllocationUtils
 
     const T& operator() (size_t i, size_t j, size_t k) const
     {
-      return m_data[i][j][k];
+      return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
 
     T& operator() (size_t i, size_t j, size_t k)
     {
-      return m_data[i][j][k];
+      return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
   };
 
