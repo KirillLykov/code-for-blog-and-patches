@@ -25,8 +25,8 @@ namespace AllocationUtils
     ::new(static_cast<void*>(p)) _T1;
   }
 
-  // Don't want to use uninitialized_fill_n because it requires default value
-  // It leads to additional restriction on the T
+  // Don't want to use uninitialized_fill_n because
+  // it requires default value and a copy-constructor
   template<typename _ForwardIterator, typename _Size>
   void uninit_fill_n(_ForwardIterator first, _Size n)
   {
@@ -43,8 +43,15 @@ namespace AllocationUtils
     }
   }
 
+  /**
+   * @class
+   *  help creating 2D and 3D arrays such that data can be accessed by [],
+   *  for instance,
+   *  double*** threeDArray = myArrayMemoryHelper.allocate(n, m, w);
+   *  threeDArray[i][j][k] = 5
+   */
   template< class T, template<typename X> class allocator = std::allocator >
-  class NDimArrayMemoryHelper
+  class ArrayMemoryHelper
   {
     allocator<T> m_alloc;
     allocator<T*> m_pAlloc;
@@ -158,138 +165,191 @@ namespace AllocationUtils
     {
     }
   };
+
+  template< class T, template<typename X> class allocator = std::allocator >
+  class grid_impl
+  {
+  protected:
+    mutable allocator<T> m_allocator;
+    size_t m_linearSz;
+    T* m_data;
+
+    typedef grid_impl<T, allocator> _TGrid;
+
+    grid_impl(size_t n1, size_t n2)
+       : m_linearSz(n1 * n2), m_data(0)
+     {
+       m_data = m_allocator.allocate(m_linearSz);
+       uninit_fill_n(m_data, m_linearSz);
+     }
+
+    grid_impl(const _TGrid& another)
+      : m_linearSz(another.m_linearSz)
+    {
+      m_data = m_allocator.allocate(m_linearSz);
+      std::uninitialized_copy(another.m_data, another.m_data + m_linearSz, this->m_data);
+    }
+
+    virtual ~grid_impl()
+    {
+      destroy(m_data, m_data + m_linearSz);
+      m_allocator.deallocate(m_data, m_linearSz);
+    }
+
+    _TGrid& operator= (const _TGrid& another)
+    {
+     if (this == &another)
+       return *this;
+
+     std::copy(another.m_data, another.m_data + m_linearSz, this->m_data);
+
+     return *this;
+    }
+
+    bool operator== (const _TGrid& another) const
+    {
+     return std::equal(m_data, m_data + m_linearSz, another.m_data);
+    }
+
+    bool operator!= (const _TGrid& another) const
+    {
+     return !this->operator== (another);
+    }
+  };
+
+  template< class T, template<typename X> class allocator = std::allocator >
+  class grid2D
+  {
+    mutable allocator<T> m_allocator;
+    size_t m_n1, m_n2, m_linearSz;
+    T* m_data;
+  public:
+
+    typedef grid2D<T, allocator> _TGrid;
+
+    grid2D(size_t n1, size_t n2)
+      : m_n1(n1), m_n2(n2), m_linearSz(m_n1 * m_n2), m_data(0)
+    {
+      m_data = m_allocator.allocate(m_linearSz);
+      uninit_fill_n(m_data, m_linearSz);
+    }
+
+    grid2D(const _TGrid& another)
+      : m_n1(another.m_n1), m_n2(another.m_n2), m_linearSz(m_n1 * m_n2)
+    {
+      m_data = m_allocator.allocate(m_linearSz);
+      std::uninitialized_copy(another.m_data, another.m_data + m_linearSz, this->m_data);
+    }
+
+    ~grid2D()
+    {
+      destroy(m_data, m_data + m_linearSz);
+      m_allocator.deallocate(m_data, m_linearSz);
+    }
+
+    _TGrid& operator= (const _TGrid& another)
+    {
+      if (this == &another)
+        return *this;
+
+      if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
+        throw AllocationUtils::array_size_error();
+
+      std::copy(another.m_data, another.m_data + m_linearSz, this->m_data);
+
+      return *this;
+    }
+
+    bool operator== (const _TGrid& another) const
+    {
+      if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
+        throw AllocationUtils::array_size_error();
+
+      return std::equal(m_data, m_data + m_linearSz, another.m_data);
+    }
+
+    bool operator!= (const _TGrid& another) const
+    {
+      return !this->operator== (another);
+    }
+
+    const T& operator() (size_t i, size_t j) const
+    {
+      return m_data[i + m_n1 * j];
+    }
+
+    T& operator() (size_t i, size_t j)
+    {
+      return m_data[i + m_n1 * j];
+    }
+  };
+
+  template< class T, template<typename X> class allocator = std::allocator >
+  class grid3D
+  {
+    mutable ArrayMemoryHelper< T, allocator > m_memHelper;
+    size_t m_n1, m_n2, m_n3;
+    T*** m_data;
+  public:
+
+    typedef grid3D<T, allocator> _TGrid;
+
+    grid3D(size_t n1, size_t n2, size_t n3)
+      : m_n1(n1), m_n2(n2), m_n3(n3), m_data(0)
+    {
+      m_data = m_memHelper.allocate(m_n1, m_n2, m_n3);
+      m_memHelper.create(m_data, m_n1, m_n2, m_n3);
+    }
+
+    grid3D(const _TGrid& another)
+      : m_n1(another.m_n1), m_n2(another.m_n2), m_n3(another.m_n3)
+    {
+      m_data = m_memHelper.allocate(m_n1, m_n2, m_n3);
+      m_memHelper.uninitCopy(this->m_data, another.m_data, m_n1, m_n2, m_n3);
+    }
+
+    ~grid3D()
+    {
+      m_memHelper.destroy(m_data, m_n1, m_n2, m_n3);
+      m_memHelper.deallocate(m_data, m_n1, m_n2, m_n3);
+    }
+
+    _TGrid& operator= (const _TGrid& another)
+    {
+      if (this == &another)
+        return *this;
+
+      if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
+        throw AllocationUtils::array_size_error();
+
+      m_memHelper.copy(this->m_data, another.m_data, m_n1, m_n2, m_n3);
+
+      return *this;
+    }
+
+    bool operator== (const _TGrid& another) const
+    {
+      if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
+        throw AllocationUtils::array_size_error();
+
+      return m_memHelper.equal(m_data, another.m_data, m_n1 , m_n2, m_n3);
+    }
+
+    bool operator!= (const _TGrid& another) const
+    {
+      return !this->operator== (another);
+    }
+
+    const T& operator() (size_t i, size_t j, size_t k) const
+    {
+      return m_data[i][j][k];
+    }
+
+    T& operator() (size_t i, size_t j, size_t k)
+    {
+      return m_data[i][j][k];
+    }
+  };
+
 }
 
-template< class T, template<typename X> class allocator = std::allocator >
-class grid2D
-{
-  mutable AllocationUtils::NDimArrayMemoryHelper< T, allocator > m_memHelper;
-  size_t m_n1, m_n2;
-  T** m_data;
-public:
-
-  typedef grid2D<T, allocator> _TGrid;
-
-  grid2D(size_t n1, size_t n2)
-    : m_n1(n1), m_n2(n2), m_data(0)
-  {
-    m_data = m_memHelper.allocate(m_n1, m_n2);
-    m_memHelper.create(m_data, m_n1, m_n2);
-  }
-
-  grid2D(const _TGrid& another)
-    : m_n1(another.m_n1), m_n2(another.m_n2)
-  {
-    m_data = m_memHelper.allocate(m_n1, m_n2);
-    m_memHelper.uninitCopy(this->m_data, another.m_data, m_n1, m_n2);
-  }
-
-  ~grid2D()
-  {
-    m_memHelper.destroy(m_data, m_n1, m_n2);
-    m_memHelper.deallocate(m_data, m_n1, m_n2);
-  }
-
-  _TGrid& operator= (const _TGrid& another)
-  {
-    if (this == &another)
-      return *this;
-
-    if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
-      throw AllocationUtils::array_size_error();
-
-    m_memHelper.copy(this->m_data, another.m_data, m_n1, m_n2);
-
-    return *this;
-  }
-
-  bool operator== (const _TGrid& another) const
-  {
-    if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
-      throw AllocationUtils::array_size_error();
-
-    return m_memHelper.equal(m_data, another.m_data, m_n1 , m_n2);
-  }
-
-  bool operator!= (const _TGrid& another) const
-  {
-    return !this->operator== (another);
-  }
-
-  const T& operator() (size_t i, size_t j) const
-  {
-    return m_data[i][j];
-  }
-
-  T& operator() (size_t i, size_t j)
-  {
-    return m_data[i][j];
-  }
-};
-
-template< class T, template<typename X> class allocator = std::allocator >
-class grid3D
-{
-  mutable AllocationUtils::NDimArrayMemoryHelper< T, allocator > m_memHelper;
-  size_t m_n1, m_n2, m_n3;
-  T*** m_data;
-public:
-
-  typedef grid3D<T, allocator> _TGrid;
-
-  grid3D(size_t n1, size_t n2, size_t n3)
-    : m_n1(n1), m_n2(n2), m_n3(n3), m_data(0)
-  {
-    m_data = m_memHelper.allocate(m_n1, m_n2, m_n3);
-    m_memHelper.create(m_data, m_n1, m_n2, m_n3);
-  }
-
-  grid3D(const _TGrid& another)
-    : m_n1(another.m_n1), m_n2(another.m_n2), m_n3(another.m_n3)
-  {
-    m_data = m_memHelper.allocate(m_n1, m_n2, m_n3);
-    m_memHelper.uninitCopy(this->m_data, another.m_data, m_n1, m_n2, m_n3);
-  }
-
-  ~grid3D()
-  {
-    m_memHelper.destroy(m_data, m_n1, m_n2, m_n3);
-    m_memHelper.deallocate(m_data, m_n1, m_n2, m_n3);
-  }
-
-  _TGrid& operator= (const _TGrid& another)
-  {
-    if (this == &another)
-      return *this;
-
-    if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
-      throw AllocationUtils::array_size_error();
-
-    m_memHelper.copy(this->m_data, another.m_data, m_n1, m_n2, m_n3);
-
-    return *this;
-  }
-
-  bool operator== (const _TGrid& another) const
-  {
-    if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
-      throw AllocationUtils::array_size_error();
-
-    return m_memHelper.equal(m_data, another.m_data, m_n1 , m_n2, m_n3);
-  }
-
-  bool operator!= (const _TGrid& another) const
-  {
-    return !this->operator== (another);
-  }
-
-  const T& operator() (size_t i, size_t j, size_t k) const
-  {
-    return m_data[i][j][k];
-  }
-
-  T& operator() (size_t i, size_t j, size_t k)
-  {
-    return m_data[i][j][k];
-  }
-};
