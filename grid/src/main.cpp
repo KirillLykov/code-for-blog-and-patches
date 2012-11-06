@@ -167,7 +167,7 @@ TEST(TwoDGridTest, assignmentBrake)
   EXPECT_TRUE(false);
 }
 
-TEST(TwoDGridTest, accessGrid2D)
+TEST(TwoDGridTest, access)
 {
   size_t n = 2, m = 4;
   grid2D<double> grid(n, m);

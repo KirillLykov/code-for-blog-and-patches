@@ -3,6 +3,8 @@
 
 namespace AllocationUtils
 {
+  // this code is from gnu stl impelentation. most compilers do have addressof function
+  // it was added to avoid problem with these which don't have
   template<typename T>
   T* addressof(T& r) throw()
   {
@@ -48,7 +50,7 @@ namespace AllocationUtils
    *  help creating 2D and 3D arrays such that data can be accessed by [],
    *  for instance,
    *  double*** threeDArray = myArrayMemoryHelper.allocate(n, m, w);
-   *  threeDArray[i][j][k] = 5
+   *  threeDArray[i][j][k] = 5;
    */
   template< class T, template<typename X> class allocator = std::allocator >
   class ArrayMemoryHelper
@@ -161,7 +163,7 @@ namespace AllocationUtils
   {
   public:
     array_size_error()
-      : std::logic_error("sizes of source and destination arrays are not eqaul")
+      : std::logic_error("sizes of source and destination arrays are not equal")
     {
     }
   };
