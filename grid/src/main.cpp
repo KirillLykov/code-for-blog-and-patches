@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "grid.h"
+#include "array_memory_helper.h"
 
 using namespace AllocationUtils;
 
