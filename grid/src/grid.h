@@ -1,46 +1,32 @@
 #include <algorithm>
 #include <stdexcept>
 
+// Algorithm must contain specialized algorithms (20.6.12):
+// addressof, uninitialized_copy
+
 namespace AllocationUtils
 {
-  // this code is from gnu stl impelentation. most compilers do have addressof function
-  // it was added to avoid problem with these which don't have
-  template<typename T>
-  T* addressof(T& r) throw()
-  {
-    return reinterpret_cast<T*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(r)));
-  }
-
-  template<typename T>
-  inline void destroy(T* p) { p->~T(); }
-
-  template<typename _ForwardIterator>
-  void destroy(_ForwardIterator first, _ForwardIterator last)
+  template<typename _ForwardIterator, typename _Allocator>
+  void destroy(_ForwardIterator first, _ForwardIterator last, _Allocator& alloc)
   {
     for (; first != last; ++first)
-      destroy(addressof(*first));
-  }
-
-  template<typename _T1>
-  inline void construct(_T1* p)
-  {
-    ::new(static_cast<void*>(p)) _T1;
+      alloc.destroy( std::addressof(*first) );
   }
 
   // Don't want to use uninitialized_fill_n because
   // it requires default value and a copy-constructor
-  template<typename _ForwardIterator, typename _Size>
-  void uninit_fill_n(_ForwardIterator first, _Size n)
+  template<typename _ForwardIterator, typename _Size, typename _T, typename _Allocator>
+  void uninitialized_fill_n_a(_ForwardIterator first, _Size n, const _T& t, _Allocator& alloc)
   {
     _ForwardIterator cur = first;
     try
     {
       for (; n > 0; --n, ++cur)
-        construct(addressof(*cur));
+        alloc.construct( std::addressof(*cur) );
     }
     catch (...)
     {
-      destroy(first, cur);
+      destroy(first, cur, alloc);
       throw;
     }
   }
@@ -82,12 +68,12 @@ namespace AllocationUtils
 
     void create(T** block, size_t n1, size_t n2)
     {
-      uninit_fill_n(block[0], n1 * n2);
+      AllocationUtils::uninitialized_fill_n_a(block[0], n1 * n2, T(), m_alloc);
     }
 
     void destroy(T** block, size_t n1, size_t n2)
     {
-      AllocationUtils::destroy(block[0], block[0] + n1 * n2);
+      AllocationUtils::destroy(block[0], block[0] + n1 * n2, m_alloc);
     }
 
     void copy(T** dest, T** source, size_t n1, size_t n2)
@@ -135,12 +121,12 @@ namespace AllocationUtils
 
     void create(T*** block, size_t n1, size_t n2, size_t n3)
     {
-      uninit_fill_n(block[0][0], n1 * n2 * n3);
+      AllocationUtils::uninitialized_fill_n_a(block[0][0], n1 * n2 * n3, T(), m_alloc);
     }
 
     void destroy(T*** block, size_t n1, size_t n2, size_t n3)
     {
-      AllocationUtils::destroy(block[0][0], block[0][0] + n1 * n2 * n3);
+      AllocationUtils::destroy(block[0][0], block[0][0] + n1 * n2 * n3, m_alloc);
     }
 
     void copy(T*** dest, T*** source, size_t n1, size_t n2, size_t n3)
@@ -172,17 +158,20 @@ namespace AllocationUtils
   class grid_impl
   {
   protected:
-    mutable allocator<T> m_allocator;
-    size_t m_linearSz;
-    T* m_data;
 
+    typedef typename allocator<T>::pointer _pointer;
+    typedef typename allocator<T>::size_type _size_type;
     typedef grid_impl<T, allocator> _TGridImpl;
 
-    grid_impl(size_t linesize)
+    mutable allocator<T> m_allocator;
+    _size_type m_linearSz;
+    typename allocator<T>::pointer m_data;
+
+    grid_impl(_size_type linesize)
        : m_linearSz(linesize), m_data(0)
      {
        m_data = m_allocator.allocate(m_linearSz);
-       uninit_fill_n(m_data, m_linearSz);
+       AllocationUtils::uninitialized_fill_n_a(m_data, m_linearSz, T(), m_allocator);
      }
 
     grid_impl(const _TGridImpl& another)
@@ -194,7 +183,7 @@ namespace AllocationUtils
 
     virtual ~grid_impl()
     {
-      destroy(m_data, m_data + m_linearSz);
+      destroy(m_data, m_data + m_linearSz, m_allocator);
       m_allocator.deallocate(m_data, m_linearSz);
     }
 
@@ -222,13 +211,14 @@ namespace AllocationUtils
   template< class T, template<typename X> class allocator = std::allocator >
   class grid2D : public grid_impl<T, allocator>
   {
-    size_t m_n1, m_n2;
+    typedef grid_impl<T, allocator> _TGridImpl;
+    typedef typename _TGridImpl::_size_type _size_type;
+    _size_type m_n1, m_n2;
   public:
 
     typedef grid2D<T, allocator> _TGrid;
-    typedef grid_impl<T, allocator> _TGridImpl;
 
-    grid2D(size_t n1, size_t n2)
+    grid2D(_size_type n1, _size_type n2)
       : _TGridImpl(n1 * n2), m_n1(n1), m_n2(n2)
     {
     }
@@ -264,12 +254,12 @@ namespace AllocationUtils
       return !this->operator== (another);
     }
 
-    const T& operator() (size_t i, size_t j) const
+    const T& operator() (_size_type i, _size_type j) const
     {
       return _TGridImpl::m_data[i + m_n1 * j];
     }
 
-    T& operator() (size_t i, size_t j)
+    T& operator() (_size_type i, _size_type j)
     {
       return _TGridImpl::m_data[i + m_n1 * j];
     }
@@ -278,13 +268,14 @@ namespace AllocationUtils
   template< class T, template<typename X> class allocator = std::allocator >
   class grid3D : public grid_impl<T, allocator>
   {
-    size_t m_n1, m_n2, m_n3;
+    typedef grid_impl<T, allocator> _TGridImpl;
+    typedef typename _TGridImpl::_size_type _size_type;
+    _size_type m_n1, m_n2, m_n3;
   public:
 
     typedef grid3D<T, allocator> _TGrid;
-    typedef grid_impl<T, allocator> _TGridImpl;
 
-    grid3D(size_t n1, size_t n2, size_t n3)
+    grid3D(_size_type n1, _size_type n2, _size_type n3)
       : _TGridImpl(n1 * n2 * n3), m_n1(n1), m_n2(n2), m_n3(n3)
     {
     }
@@ -320,12 +311,12 @@ namespace AllocationUtils
       return !this->operator== (another);
     }
 
-    const T& operator() (size_t i, size_t j, size_t k) const
+    const T& operator() (_size_type i, _size_type j, _size_type k) const
     {
       return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
 
-    T& operator() (size_t i, size_t j, size_t k)
+    T& operator() (_size_type i, _size_type j, _size_type k)
     {
       return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
