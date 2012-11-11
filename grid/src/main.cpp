@@ -186,6 +186,40 @@ TEST(TwoDGridTest, access)
   }
 }
 
+TEST(TwoDGridTest, swap)
+{
+  size_t n1 = 3, m1 = 2;
+  grid2D<double> grid1(n1, m1);
+  for (size_t i = 0; i < n1; ++i) {
+    for (size_t j = 0; j < m1; ++j) {
+      grid1(i, j) = i * j;
+    }
+  }
+
+  size_t n2 = 5, m2 = 3;
+  grid2D<double> grid2(n2, m2);
+  for (size_t i = 0; i < n2; ++i) {
+    for (size_t j = 0; j < m2; ++j) {
+      grid2(i, j) = i + j;
+    }
+  }
+
+  std::swap(grid1, grid2);
+
+  for (size_t i = 0; i < n1; ++i) {
+    for (size_t j = 0; j < m1; ++j) {
+      EXPECT_EQ(grid2(i, j), i * j);
+    }
+  }
+
+  for (size_t i = 0; i < n2; ++i) {
+    for (size_t j = 0; j < m2; ++j) {
+      EXPECT_EQ(grid1(i, j), i + j);
+    }
+  }
+
+}
+
 TEST(ThreeDGridTest, construction)
 {
 	grid3D<double> grid(1, 2, 3);
@@ -238,10 +272,51 @@ TEST(ThreeDGridTest, access)
 			for (size_t k = 0; k < w; ++k) {
 			  EXPECT_EQ(grid2(i, j, k), i * j * k);
 			}
-			std::cout << std::endl;
 		}
-		std::cout << std::endl;
 	}
+}
+
+
+TEST(ThreeDGridTest, swap)
+{
+  size_t n1 = 3, m1 = 2, w1 = 4;
+  grid3D<double> grid1(n1, m1, w1);
+  for (size_t i = 0; i < n1; ++i) {
+    for (size_t j = 0; j < m1; ++j) {
+      for (size_t k = 0; k < w1; ++k) {
+        grid1(i, j, k) = i * j * k;
+      }
+    }
+  }
+
+  size_t n2 = 5, m2 = 3, w2 = 5;
+  grid3D<double> grid2(n2, m2, w2);
+  for (size_t i = 0; i < n2; ++i) {
+    for (size_t j = 0; j < m2; ++j) {
+      for (size_t k = 0; k < w2; ++k) {
+        grid2(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  std::swap(grid1, grid2);
+
+  for (size_t i = 0; i < n1; ++i) {
+    for (size_t j = 0; j < m1; ++j) {
+      for (size_t k = 0; k < w1; ++k) {
+        EXPECT_EQ(grid2(i, j, k), i * j * k);
+      }
+    }
+  }
+
+  for (size_t i = 0; i < n2; ++i) {
+    for (size_t j = 0; j < m2; ++j) {
+      for (size_t k = 0; k < w2; ++k) {
+        EXPECT_EQ(grid1(i, j, k), i + j + k);
+      }
+    }
+  }
+
 }
 
 int main(int argc, char** argv)

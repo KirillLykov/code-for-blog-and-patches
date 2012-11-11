@@ -13,18 +13,18 @@
 
 namespace AllocationUtils
 {
-  template< class T, template<typename X> class allocator >
+  template< class T, class allocator >
   class grid_impl
   {
   protected:
 
-    typedef typename allocator<T>::pointer _pointer;
-    typedef typename allocator<T>::size_type _size_type;
+    typedef typename allocator::pointer _pointer;
+    typedef typename allocator::size_type _size_type;
     typedef grid_impl<T, allocator> _TGridImpl;
 
-    mutable allocator<T> m_allocator;
+    mutable allocator m_allocator;
     _size_type m_linearSz;
-    typename allocator<T>::pointer m_data;
+    typename allocator::pointer m_data;
 
     grid_impl(_size_type linesize)
        : m_linearSz(linesize), m_data(0)
@@ -48,26 +48,33 @@ namespace AllocationUtils
 
     _TGridImpl& operator= (const _TGridImpl& another)
     {
-     if (this == &another)
+      if (this == &another)
        return *this;
 
-     std::copy(another.m_data, another.m_data + m_linearSz, this->m_data);
+      std::copy(another.m_data, another.m_data + m_linearSz, this->m_data);
 
-     return *this;
+      return *this;
     }
 
     bool operator== (const _TGridImpl& another) const
     {
-     return std::equal(m_data, m_data + m_linearSz, another.m_data);
+      return std::equal(m_data, m_data + m_linearSz, another.m_data);
     }
 
     bool operator!= (const _TGridImpl& another) const
     {
-     return !this->operator== (another);
+      return !this->operator== (another);
+    }
+
+    void swap(_TGridImpl& another)
+    {
+      std::swap(m_allocator, another.m_allocator);
+      std::swap(m_data, another.m_data);
+      std::swap(m_linearSz, another.m_linearSz);
     }
   };
 
-  template< class T, template<typename X> class allocator = std::allocator >
+  template< class T, class allocator = std::allocator<T> >
   class grid2D : public grid_impl<T, allocator>
   {
     typedef grid_impl<T, allocator> _TGridImpl;
@@ -122,9 +129,16 @@ namespace AllocationUtils
     {
       return _TGridImpl::m_data[i + m_n1 * j];
     }
+
+    void swap(_TGrid& another)
+    {
+      _TGridImpl::swap(another);
+      std::swap(m_n1, another.m_n1);
+      std::swap(m_n2, another.m_n2);
+    }
   };
 
-  template< class T, template<typename X> class allocator = std::allocator >
+  template< class T, class allocator = std::allocator<T> >
   class grid3D : public grid_impl<T, allocator>
   {
     typedef grid_impl<T, allocator> _TGridImpl;
@@ -179,8 +193,27 @@ namespace AllocationUtils
     {
       return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
-  };
 
+    void swap(_TGrid& another)
+    {
+      _TGridImpl::swap(another);
+      std::swap(m_n1, another.m_n1);
+      std::swap(m_n2, another.m_n2);
+      std::swap(m_n3, another.m_n3);
+    }
+  };
+}
+
+namespace std {
+  template<typename _Tp, typename _Alloc>
+  inline void
+  swap(AllocationUtils::grid2D<_Tp, _Alloc>& __x, AllocationUtils::grid2D<_Tp, _Alloc>& __y)
+  { __x.swap(__y); }
+
+  template<typename _Tp, typename _Alloc>
+  inline void
+  swap(AllocationUtils::grid3D<_Tp, _Alloc>& __x, AllocationUtils::grid3D<_Tp, _Alloc>& __y)
+  { __x.swap(__y); }
 }
 
 #endif /* GRID_H_ */
