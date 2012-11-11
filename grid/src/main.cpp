@@ -139,8 +139,6 @@ TEST(TwoDGridTest, construction)
 
 TEST(TwoDGridTest, copyConstruction)
 {
-//TODO check a valgrind error:
-//Conditional jump or move depends on uninitialised value in equal operator
 	grid2D<double> grid1(1, 2);
 	grid2D<double> grid2(grid1);
 	EXPECT_EQ(grid1, grid2);
