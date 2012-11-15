@@ -79,6 +79,8 @@ namespace AllocationUtils
   {
     typedef grid_impl<T, allocator> _TGridImpl;
     typedef typename _TGridImpl::_size_type _size_type;
+    typedef typename allocator::reference _reference;
+    typedef typename allocator::const_reference _const_reference;
     _size_type m_n1, m_n2;
   public:
 
@@ -120,12 +122,12 @@ namespace AllocationUtils
       return !this->operator== (another);
     }
 
-    const T& operator() (_size_type i, _size_type j) const
+    _const_reference operator() (_size_type i, _size_type j) const
     {
       return _TGridImpl::m_data[i + m_n1 * j];
     }
 
-    T& operator() (_size_type i, _size_type j)
+    _reference operator() (_size_type i, _size_type j)
     {
       return _TGridImpl::m_data[i + m_n1 * j];
     }
@@ -143,6 +145,8 @@ namespace AllocationUtils
   {
     typedef grid_impl<T, allocator> _TGridImpl;
     typedef typename _TGridImpl::_size_type _size_type;
+    typedef typename allocator::reference _reference;
+    typedef typename allocator::const_reference _const_reference;
     _size_type m_n1, m_n2, m_n3;
   public:
 
@@ -184,12 +188,12 @@ namespace AllocationUtils
       return !this->operator== (another);
     }
 
-    const T& operator() (_size_type i, _size_type j, _size_type k) const
+    _const_reference operator() (_size_type i, _size_type j, _size_type k) const
     {
       return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
 
-    T& operator() (_size_type i, _size_type j, _size_type k)
+    _reference operator() (_size_type i, _size_type j, _size_type k)
     {
       return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
