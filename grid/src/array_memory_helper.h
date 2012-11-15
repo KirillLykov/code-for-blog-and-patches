@@ -1,9 +1,12 @@
 //  (C) Copyright Kirill Lykov 2012.
 //
-// Distributed under the FreeBSD Software License (See accompanying file licence)
+// Distributed under the FreeBSD Software License (See accompanying file license.txt)
 
 #ifndef ARRAY_MEMORY_HELPER_H_
 #define ARRAY_MEMORY_HELPER_H_
+
+#include <memory>
+#include "allocation_utils_common.h"
 
 namespace AllocationUtils
 {

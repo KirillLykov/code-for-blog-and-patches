@@ -1,6 +1,6 @@
 //  (C) Copyright Kirill Lykov 2012.
 //
-// Distributed under the FreeBSD Software License (See accompanying file licence)
+// Distributed under the FreeBSD Software License (See accompanying file license.txt)
 
 #ifndef GRID_H_
 #define GRID_H_
