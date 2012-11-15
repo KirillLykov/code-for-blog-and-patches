@@ -7,6 +7,7 @@
 
 #include "allocation_utils_common.h"
 #include <stdexcept>
+#include <assert.h>
 
 // Algorithm must contain specialized algorithms (20.6.12):
 // addressof, uninitialized_copy
@@ -29,6 +30,9 @@ namespace containers
     Grid_impl(_size_type linesize)
        : m_linearSz(linesize), m_data(0)
      {
+       if (linesize == 0)
+         throw allocation_utils::array_size_error();
+
        m_data = m_allocator.allocate(m_linearSz);
        allocation_utils::uninitialized_fill_n_a(m_data, m_linearSz, T(), m_allocator);
      }
@@ -42,7 +46,7 @@ namespace containers
 
     virtual ~Grid_impl()
     {
-      destroy(m_data, m_data + m_linearSz, m_allocator);
+      allocation_utils::destroy(m_data, m_data + m_linearSz, m_allocator);
       m_allocator.deallocate(m_data, m_linearSz);
     }
 
@@ -138,6 +142,12 @@ namespace containers
       std::swap(m_n1, another.m_n1);
       std::swap(m_n2, another.m_n2);
     }
+
+    _size_type size(_size_type index)
+    {
+      assert(index < 2);
+      return index == 0 ? m_n1 : m_n2;
+    }
   };
 
   template< class T, class allocator = std::allocator<T> >
@@ -204,6 +214,12 @@ namespace containers
       std::swap(m_n1, another.m_n1);
       std::swap(m_n2, another.m_n2);
       std::swap(m_n3, another.m_n3);
+    }
+
+    _size_type size(_size_type index)
+    {
+      assert(index < 3);
+      return index == 0 ? m_n1 : index == 1 ? m_n2 : m_n3;
     }
   };
 }

@@ -9,7 +9,16 @@ using namespace containers;
 
 TEST(TwoDGridTest, construction)
 {
-  Grid2D<double> grid(1, 2);
+  //Grid2D<double> grid(1, -2);
+  //Grid2D<double> grid2(-1, 2);
+  try {
+    Grid2D<double> grid3(0, 0);
+  }
+  catch (const allocation_utils::array_size_error& er)
+  {
+    return;
+  }
+  EXPECT_TRUE(false);
 }
 
 TEST(TwoDGridTest, copyConstruction)
