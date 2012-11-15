@@ -11,36 +11,36 @@
 // Algorithm must contain specialized algorithms (20.6.12):
 // addressof, uninitialized_copy
 
-namespace AllocationUtils
+namespace containers
 {
   template< class T, class allocator >
-  class grid_impl
+  class Grid_impl
   {
   protected:
 
     typedef typename allocator::pointer _pointer;
     typedef typename allocator::size_type _size_type;
-    typedef grid_impl<T, allocator> _TGridImpl;
+    typedef Grid_impl<T, allocator> _TGridImpl;
 
     mutable allocator m_allocator;
     _size_type m_linearSz;
     typename allocator::pointer m_data;
 
-    grid_impl(_size_type linesize)
+    Grid_impl(_size_type linesize)
        : m_linearSz(linesize), m_data(0)
      {
        m_data = m_allocator.allocate(m_linearSz);
-       AllocationUtils::uninitialized_fill_n_a(m_data, m_linearSz, T(), m_allocator);
+       allocation_utils::uninitialized_fill_n_a(m_data, m_linearSz, T(), m_allocator);
      }
 
-    grid_impl(const _TGridImpl& another)
+    Grid_impl(const _TGridImpl& another)
       : m_linearSz(another.m_linearSz)
     {
       m_data = m_allocator.allocate(m_linearSz);
       std::uninitialized_copy(another.m_data, another.m_data + m_linearSz, this->m_data);
     }
 
-    virtual ~grid_impl()
+    virtual ~Grid_impl()
     {
       destroy(m_data, m_data + m_linearSz, m_allocator);
       m_allocator.deallocate(m_data, m_linearSz);
@@ -75,23 +75,23 @@ namespace AllocationUtils
   };
 
   template< class T, class allocator = std::allocator<T> >
-  class grid2D : public grid_impl<T, allocator>
+  class Grid2D : public Grid_impl<T, allocator>
   {
-    typedef grid_impl<T, allocator> _TGridImpl;
+    typedef Grid_impl<T, allocator> _TGridImpl;
     typedef typename _TGridImpl::_size_type _size_type;
     typedef typename allocator::reference _reference;
     typedef typename allocator::const_reference _const_reference;
     _size_type m_n1, m_n2;
   public:
 
-    typedef grid2D<T, allocator> _TGrid;
+    typedef Grid2D<T, allocator> _TGrid;
 
-    grid2D(_size_type n1, _size_type n2)
+    Grid2D(_size_type n1, _size_type n2)
       : _TGridImpl(n1 * n2), m_n1(n1), m_n2(n2)
     {
     }
 
-    grid2D(const _TGrid& another)
+    Grid2D(const _TGrid& another)
       : _TGridImpl(another), m_n1(another.m_n1), m_n2(another.m_n2)
     {
     }
@@ -102,7 +102,7 @@ namespace AllocationUtils
         return *this;
 
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
-        throw AllocationUtils::array_size_error();
+        throw allocation_utils::array_size_error();
 
       _TGridImpl::operator= (another);
 
@@ -112,7 +112,7 @@ namespace AllocationUtils
     bool operator== (const _TGrid& another) const
     {
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2)
-        throw AllocationUtils::array_size_error();
+        throw allocation_utils::array_size_error();
 
       return _TGridImpl::operator== (another);
     }
@@ -141,23 +141,23 @@ namespace AllocationUtils
   };
 
   template< class T, class allocator = std::allocator<T> >
-  class grid3D : public grid_impl<T, allocator>
+  class Grid3D : public Grid_impl<T, allocator>
   {
-    typedef grid_impl<T, allocator> _TGridImpl;
+    typedef Grid_impl<T, allocator> _TGridImpl;
     typedef typename _TGridImpl::_size_type _size_type;
     typedef typename allocator::reference _reference;
     typedef typename allocator::const_reference _const_reference;
     _size_type m_n1, m_n2, m_n3;
   public:
 
-    typedef grid3D<T, allocator> _TGrid;
+    typedef Grid3D<T, allocator> _TGrid;
 
-    grid3D(_size_type n1, _size_type n2, _size_type n3)
+    Grid3D(_size_type n1, _size_type n2, _size_type n3)
       : _TGridImpl(n1 * n2 * n3), m_n1(n1), m_n2(n2), m_n3(n3)
     {
     }
 
-    grid3D(const _TGrid& another)
+    Grid3D(const _TGrid& another)
       :  _TGridImpl(another), m_n1(another.m_n1), m_n2(another.m_n2), m_n3(another.m_n3)
     {
     }
@@ -168,7 +168,7 @@ namespace AllocationUtils
         return *this;
 
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
-        throw AllocationUtils::array_size_error();
+        throw allocation_utils::array_size_error();
 
       _TGridImpl::operator= (another);
 
@@ -178,7 +178,7 @@ namespace AllocationUtils
     bool operator== (const _TGrid& another) const
     {
       if (m_n1 != another.m_n1 || m_n2 != another.m_n2 || m_n3 != another.m_n3)
-        throw AllocationUtils::array_size_error();
+        throw allocation_utils::array_size_error();
 
       return _TGridImpl::operator== (another);
     }
@@ -211,12 +211,12 @@ namespace AllocationUtils
 namespace std {
   template<typename _Tp, typename _Alloc>
   inline void
-  swap(AllocationUtils::grid2D<_Tp, _Alloc>& __x, AllocationUtils::grid2D<_Tp, _Alloc>& __y)
+  swap(containers::Grid2D<_Tp, _Alloc>& __x, containers::Grid2D<_Tp, _Alloc>& __y)
   { __x.swap(__y); }
 
   template<typename _Tp, typename _Alloc>
   inline void
-  swap(AllocationUtils::grid3D<_Tp, _Alloc>& __x, AllocationUtils::grid3D<_Tp, _Alloc>& __y)
+  swap(containers::Grid3D<_Tp, _Alloc>& __x, containers::Grid3D<_Tp, _Alloc>& __y)
   { __x.swap(__y); }
 }
 

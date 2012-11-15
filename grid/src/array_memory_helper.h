@@ -8,7 +8,7 @@
 #include <memory>
 #include "allocation_utils_common.h"
 
-namespace AllocationUtils
+namespace allocation_utils
 {
  /**
    * @class
@@ -47,12 +47,12 @@ namespace AllocationUtils
 
     void create(T** block, size_t n1, size_t n2)
     {
-      AllocationUtils::uninitialized_fill_n_a(block[0], n1 * n2, T(), m_alloc);
+      allocation_utils::uninitialized_fill_n_a(block[0], n1 * n2, T(), m_alloc);
     }
 
     void destroy(T** block, size_t n1, size_t n2)
     {
-      AllocationUtils::destroy(block[0], block[0] + n1 * n2, m_alloc);
+      allocation_utils::destroy(block[0], block[0] + n1 * n2, m_alloc);
     }
 
     void copy(T** dest, T** source, size_t n1, size_t n2)
@@ -100,12 +100,12 @@ namespace AllocationUtils
 
     void create(T*** block, size_t n1, size_t n2, size_t n3)
     {
-      AllocationUtils::uninitialized_fill_n_a(block[0][0], n1 * n2 * n3, T(), m_alloc);
+      allocation_utils::uninitialized_fill_n_a(block[0][0], n1 * n2 * n3, T(), m_alloc);
     }
 
     void destroy(T*** block, size_t n1, size_t n2, size_t n3)
     {
-      AllocationUtils::destroy(block[0][0], block[0][0] + n1 * n2 * n3, m_alloc);
+      allocation_utils::destroy(block[0][0], block[0][0] + n1 * n2 * n3, m_alloc);
     }
 
     void copy(T*** dest, T*** source, size_t n1, size_t n2, size_t n3)

@@ -8,10 +8,11 @@
 #include <algorithm>
 #include <stdexcept>
 
-// Algorithm must contain specialized algorithms (20.6.12):
-// addressof, uninitialized_copy
+// <algorithm> must contain specialized algorithms (20.6.12):
+// addressof, uninitialized_copy.
+// In case if gcc 4.7 or higher is used, use option -std=c++11
 
-namespace AllocationUtils
+namespace allocation_utils
 {
   template<typename _ForwardIterator, typename _Allocator>
   void destroy(_ForwardIterator first, _ForwardIterator last, _Allocator& alloc)

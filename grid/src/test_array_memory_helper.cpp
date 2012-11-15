@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include "array_memory_helper.h"
 
-using namespace AllocationUtils;
+using namespace allocation_utils;
 
 TEST(TwoDArrayTest, allocate)
 {
