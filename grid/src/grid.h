@@ -143,9 +143,10 @@ namespace containers
       std::swap(m_n2, another.m_n2);
     }
 
-    _size_type size(_size_type index)
+    _size_type size(_size_type index) const
     {
-      assert(index < 2);
+      if (index > 2)
+        throw allocation_utils::array_size_error();
       return index == 0 ? m_n1 : m_n2;
     }
   };
@@ -216,9 +217,10 @@ namespace containers
       std::swap(m_n3, another.m_n3);
     }
 
-    _size_type size(_size_type index)
+    _size_type size(_size_type index) const
     {
-      assert(index < 3);
+      if (index > 3)
+        throw allocation_utils::array_size_error();
       return index == 0 ? m_n1 : index == 1 ? m_n2 : m_n3;
     }
   };

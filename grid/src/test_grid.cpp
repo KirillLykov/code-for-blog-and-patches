@@ -9,10 +9,24 @@ using namespace containers;
 
 TEST(TwoDGridTest, construction)
 {
-  //Grid2D<double> grid(1, -2);
-  //Grid2D<double> grid2(-1, 2);
   try {
     Grid2D<double> grid3(0, 0);
+  }
+  catch (const allocation_utils::array_size_error& er)
+  {
+    return;
+  }
+  EXPECT_TRUE(false);
+}
+
+TEST(TwoDGridTest, size)
+{
+  size_t n = 3, m = 4;
+  Grid2D<double> grid(n, m);
+  EXPECT_EQ(grid.size(0), n);
+  EXPECT_EQ(grid.size(1), m);
+  try {
+    grid.size(99);
   }
   catch (const allocation_utils::array_size_error& er)
   {
@@ -105,6 +119,23 @@ TEST(TwoDGridTest, swap)
 TEST(ThreeDGridTest, construction)
 {
   Grid3D<double> grid(1, 2, 3);
+}
+
+TEST(ThreeDGridTest, size)
+{
+  size_t n = 3, m = 4, w = 7;
+  Grid3D<double> grid(n, m, w);
+  EXPECT_EQ(grid.size(0), n);
+  EXPECT_EQ(grid.size(1), m);
+  EXPECT_EQ(grid.size(2), w);
+  try {
+    grid.size(99);
+  }
+  catch (const allocation_utils::array_size_error& er)
+  {
+    return;
+  }
+  EXPECT_TRUE(false);
 }
 
 TEST(ThreeDGridTest, copyConstruction)
