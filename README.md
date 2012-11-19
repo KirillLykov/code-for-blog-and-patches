@@ -1,4 +1,5 @@
 kl-utilities
 ============
 
-Repo for storing code used at work, blog posts, code for students, or projects which are too small for a separate repo
+Repo for general purpose code used in other projects.
+Most of it is math-related.
