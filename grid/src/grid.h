@@ -14,6 +14,9 @@
 
 namespace containers
 {
+//TODO use macro for handling exceptional behaviour:
+//it may throw an exception or an assertion. Exceptions are handy for testing
+
   template< class T, class allocator >
   class Grid_impl
   {
@@ -133,6 +136,7 @@ namespace containers
 
     _reference operator() (_size_type i, _size_type j)
     {
+      assert(i < m_n1 && j < m_n2);
       return _TGridImpl::m_data[i + m_n1 * j];
     }
 
@@ -201,6 +205,7 @@ namespace containers
 
     _const_reference operator() (_size_type i, _size_type j, _size_type k) const
     {
+      assert(i < m_n1 && j < m_n2 && k < m_n3);
       return _TGridImpl::m_data[i + m_n1 * (j + m_n2 * k)];
     }
 
