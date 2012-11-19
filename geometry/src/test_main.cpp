@@ -12,6 +12,7 @@
 // to run all tests from one point
 // corresponding cpp files must be excluded from build
 // otherwise "duplicate symbol" linker error happens
+#include "test_math_vector.cpp"
 #include "linear_interpolator.h"
 typedef BasicAccessStrategy _AccessStrategy;
 #include "test_linear_interpolator.cpp"

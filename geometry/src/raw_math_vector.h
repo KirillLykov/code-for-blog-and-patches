@@ -18,6 +18,13 @@ namespace geometry_utils
  */
 namespace raw_math_vector
 {
+  static const double linearTolerance = 1e-6;
+
+  inline bool isEqualLinear(double left, double right)
+  {
+    return fabs(left - right) < linearTolerance;
+  }
+
   inline void copy(double* targetVector, const double* sourceVector)
   {
     memcpy(targetVector, sourceVector, 3 * sizeof(targetVector[0]));

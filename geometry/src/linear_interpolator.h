@@ -79,7 +79,7 @@ class LinearInterpolator : public AccessStrategy
   }
 
   /**
-   * Interpolate using Trilinear interpolation method
+   * Interpolate using trilinear interpolation method
    * names of variables are from http://en.wikipedia.org/wiki/Trilinear_interpolation
    */
   double trilin_interp(const double* inputPoint, const size_t* index) const
