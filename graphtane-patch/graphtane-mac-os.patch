@@ -1,7 +1,7 @@
 From 58990479f2c71b71dc4b72cedd01dde14cb27936 Mon Sep 17 00:00:00 2001
 From: kirilllykov <lykov.kirill@gmail.com>
 Date: Tue, 18 Feb 2014 14:51:41 +0100
-Subject: [PATCH] Changes for building on mac os 10.7.5 with macport
+Subject: [PATCH 1/3] Changes for building on mac os 10.7.5 with macport
 
 ---
  CMake/FindGLEW.cmake       |  6 +++---
@@ -213,6 +213,392 @@ index 43fecd8..709802a 100644
  	if (i != vec.end())
  	{
  		vec.erase(i);
+-- 
+1.8.5.4
+
+
+From fffcaf105969fe4230e01f5ec7661a930967e9bc Mon Sep 17 00:00:00 2001
+From: kirilllykov <lykov.kirill@gmail.com>
+Date: Thu, 20 Feb 2014 19:43:25 +0100
+Subject: [PATCH 2/3] Some changes
+
+---
+ src/GCommon/CMakeLists.txt | 1 +
+ src/GCommon/VectorHelper.h | 2 +-
+ src/GVis/GVisFwd.h         | 6 +++---
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/src/GCommon/CMakeLists.txt b/src/GCommon/CMakeLists.txt
+index b8e89fd..afd9b83 100644
+--- a/src/GCommon/CMakeLists.txt
++++ b/src/GCommon/CMakeLists.txt
+@@ -5,3 +5,4 @@ set(SourceFiles ${CoreFiles})
+ SOURCE_GROUP("Source Files" FILES ${CoreFiles})
+ 
+ add_library(GCommon ${Graphtane_LIB_TYPE} ${SourceFiles})
++target_link_libraries(GCommon ${Boost_LIBRARIES})
+\ No newline at end of file
+diff --git a/src/GCommon/VectorHelper.h b/src/GCommon/VectorHelper.h
+index 709802a..345a040 100644
+--- a/src/GCommon/VectorHelper.h
++++ b/src/GCommon/VectorHelper.h
+@@ -28,7 +28,7 @@ namespace GCommon {
+ template <typename T>
+ void vectorErase(std::vector<T>& vec, const T& element)
+ {
+-	typename std::vector<T>::const_iterator i = std::find(vec.begin(), vec.end(), element);
++	typename std::vector<T>::iterator i = std::find(vec.begin(), vec.end(), element);
+ 	if (i != vec.end())
+ 	{
+ 		vec.erase(i);
+diff --git a/src/GVis/GVisFwd.h b/src/GVis/GVisFwd.h
+index e6fe747..c916f97 100644
+--- a/src/GVis/GVisFwd.h
++++ b/src/GVis/GVisFwd.h
+@@ -24,12 +24,12 @@
+ 
+ #define GLEW_STATIC
+ #include <GL/glew.h>
+-#include <GL/glfw3.h>
++#include <GLFW/glfw3.h>
+ 
+ namespace GVis {
+ 
+-using std::tr1::static_pointer_cast;
+-using std::tr1::shared_ptr;
++using std::static_pointer_cast;
++using std::shared_ptr;
+ 
+ class Camera;
+ class Compositor;
+-- 
+1.8.5.4
+
+
+From 3f6f931d65d7811a2c22ea90b2913aac6eb341e7 Mon Sep 17 00:00:00 2001
+From: kirilllykov <lykov.kirill@gmail.com>
+Date: Mon, 24 Feb 2014 21:31:56 +0100
+Subject: [PATCH 3/3] Changes to build on Mac
+
+---
+ CMakeLists.txt                                   |  2 +-
+ src/GCompute/ClError.cpp                         |  4 ++++
+ src/GCompute/ClIncludes.h                        |  4 ++++
+ src/GCompute/Context.cpp                         |  3 ++-
+ src/GComputeVis/CMakeLists.txt                   |  2 +-
+ src/GFluid/CMakeLists.txt                        |  2 +-
+ src/GFluid/FluidSolver.cpp                       | 11 +++++++++--
+ src/GFluid/IsosurfaceNormalCalculator.cpp        | 11 +++++++++--
+ src/GSparseVolumes/CMakeLists.txt                |  2 +-
+ src/GSparseVolumes/ImageBuffer.h                 |  3 ++-
+ src/GSparseVolumes/RenderableVolumeFactory.cpp   |  4 +++-
+ src/GSparseVolumes/VolumeTextureAtlasBuilder.cpp |  4 +++-
+ src/GSparseVolumesVdb/GridNormalCalculator.cpp   |  6 ++++--
+ src/GSparseVolumesVdb/VdbGrid.h                  |  4 ++--
+ src/TestFluid3d/Main.cpp                         |  3 ++-
+ src/VdbViewerApp/CMakeLists.txt                  |  2 +-
+ 16 files changed, 49 insertions(+), 18 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 806bbab..27f0832 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,7 +19,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+ set(CMAKE_DEBUG_POSTFIX d)
+ link_directories(${CMAKE_BINARY_DIR}/lib)
+ 
+-find_package(Boost COMPONENTS program_options-mt  REQUIRED)
++find_package(Boost COMPONENTS program_options-mt regex-mt filesystem-mt system-mt REQUIRED)
+ include_directories(${Boost_INCLUDE_DIRS})
+ link_directories(${Boost_LIBRARY_DIRS})
+ 
+diff --git a/src/GCompute/ClError.cpp b/src/GCompute/ClError.cpp
+index a26cb35..dc40f2d 100644
+--- a/src/GCompute/ClError.cpp
++++ b/src/GCompute/ClError.cpp
+@@ -20,7 +20,11 @@
+ 
+ #include "ClError.h"
+ 
++#ifdef __APPLE__
++#include <OpenCL/cl.hpp>
++#else
+ #include <CL/cl.hpp>
++#endif
+ 
+ namespace GCompute {
+ 
+diff --git a/src/GCompute/ClIncludes.h b/src/GCompute/ClIncludes.h
+index 084ce2a..7b602f1 100644
+--- a/src/GCompute/ClIncludes.h
++++ b/src/GCompute/ClIncludes.h
+@@ -21,4 +21,8 @@
+ #pragma once
+ 
+ #define __NO_STD_STRING
++#ifdef __APPLE__
++#include <OpenCL/cl.hpp>
++#else
+ #include <CL/cl.hpp>
++#endif
+diff --git a/src/GCompute/Context.cpp b/src/GCompute/Context.cpp
+index a079e31..314bbb8 100644
+--- a/src/GCompute/Context.cpp
++++ b/src/GCompute/Context.cpp
+@@ -22,12 +22,13 @@
+ #include "ClError.h"
+ 
+ #include <assert.h>
++#include <stdexcept>
+ 
+ #ifdef WIN32
+ #include "Context_gpu_win32.h"
+ #else
+ // TODO: add support for other platforms.
+-	ContextPtr createGpuContext(const cl::Platform& platform)
++	GCompute::ContextPtr createGpuContext(const cl::Platform& platform)
+ 	{
+ 		throw std::runtime_error("No createGpuContext() implementation for this platform");
+ 	}
+diff --git a/src/GComputeVis/CMakeLists.txt b/src/GComputeVis/CMakeLists.txt
+index c5175f8..9aadfaf 100644
+--- a/src/GComputeVis/CMakeLists.txt
++++ b/src/GComputeVis/CMakeLists.txt
+@@ -14,4 +14,4 @@ include_directories(${GVis_INCLUDE_DIRS})
+ 
+ add_library(GComputeVis ${Graphtane_LIB_TYPE} ${SourceFiles})
+ 
+-target_link_libraries(GComputeVis ${GCompute_LIBRARIES} ${GGVis_LIBRARIES})
++target_link_libraries(GComputeVis ${GCompute_LIBRARIES} ${GVis_LIBRARIES})
+diff --git a/src/GFluid/CMakeLists.txt b/src/GFluid/CMakeLists.txt
+index 4297121..16298ef 100644
+--- a/src/GFluid/CMakeLists.txt
++++ b/src/GFluid/CMakeLists.txt
+@@ -14,4 +14,4 @@ include_directories(${GCompute_INCLUDE_DIRS})
+ 
+ add_library(GFluid ${Graphtane_LIB_TYPE} ${SourceFiles})
+ 
+-target_link_libraries(GFluid ${OPENCL_LIBRARIES} ${GCompute_LIBRARIES})
++target_link_libraries(GFluid ${OPENCL_LIBRARIES} ${OPENGL_LIBRARIES}  ${GCompute_LIBRARIES})
+diff --git a/src/GFluid/FluidSolver.cpp b/src/GFluid/FluidSolver.cpp
+index 5b57862..37e6a69 100644
+--- a/src/GFluid/FluidSolver.cpp
++++ b/src/GFluid/FluidSolver.cpp
+@@ -29,12 +29,19 @@
+ #include <GCompute/GlTexture.h>
+ 
+ #include <boost/scoped_array.hpp>
++#include <OpenGL/gl.h>
+ 
+ #include "../../Kernels/Fluid/FluidDataTypes.h"
+ #include "../../Kernels/Fluid/Params.h"
+ 
+ #include <string>
+ 
++#if !defined(CL_VERSION_1_2)
++#define IMAGE_GL_CLASS cl::Image2DGL
++#else
++#define IMAGE_GL_CLASS cl::ImageGL
++#endif
++
+ using namespace GCompute;
+ using namespace GFluid;
+ 
+@@ -168,7 +175,7 @@ public:
+ 		}
+ 
+ 		// Create fluid state image buffer
+-		m_fluidStateImageBuffer = cl::ImageGL(system._getContext(), CL_MEM_WRITE_ONLY, fluidStateTexture.target, 0, fluidStateTexture.textureId, &err);
++		m_fluidStateImageBuffer = IMAGE_GL_CLASS(system._getContext(), CL_MEM_WRITE_ONLY, fluidStateTexture.target, 0, fluidStateTexture.textureId, &err);
+ 		checkError(err);
+ 
+ 		// Create parameters buffer
+@@ -341,7 +348,7 @@ private:
+ 	cl::Buffer m_velocityGrids[velocityGridCount];
+ 
+ 	cl::Buffer m_paramsBuffer;
+-	cl::ImageGL m_fluidStateImageBuffer;
++	IMAGE_GL_CLASS m_fluidStateImageBuffer;
+ 
+ 	cl::Buffer* m_velocityGridInputPtr;
+ 	cl::Buffer* m_velocityGridOutputPtr;
+diff --git a/src/GFluid/IsosurfaceNormalCalculator.cpp b/src/GFluid/IsosurfaceNormalCalculator.cpp
+index aa58f62..d92b397 100644
+--- a/src/GFluid/IsosurfaceNormalCalculator.cpp
++++ b/src/GFluid/IsosurfaceNormalCalculator.cpp
+@@ -27,6 +27,13 @@
+ 
+ #include <string>
+ 
++// TODO copy-past from FluidSolver - move to a common place
++#if !defined(CL_VERSION_1_2)
++#define IMAGE_GL_CLASS cl::Image2DGL
++#else
++#define IMAGE_GL_CLASS cl::ImageGL
++#endif
++
+ using namespace GCompute;
+ 
+ namespace GFluid {
+@@ -51,7 +58,7 @@ public:
+ 		ClSystem::createKernel(m_kernel_downScale2x, program, "downScale2x");
+ 
+ 		cl_int err;
+-		m_normalImageBuffer = cl::ImageGL(system._getContext(), CL_MEM_WRITE_ONLY, normalTexture.target, 0, normalTexture.textureId, &err);
++		m_normalImageBuffer = IMAGE_GL_CLASS(system._getContext(), CL_MEM_WRITE_ONLY, normalTexture.target, 0, normalTexture.textureId, &err);
+ 		checkError(err);
+ 
+ 
+@@ -92,7 +99,7 @@ private:
+ 	boost::scoped_ptr<KernelRunner> m_fullSizeKernelRunner;
+ 	boost::scoped_ptr<KernelRunner> m_halfSizeKernelRunner;
+ 
+-	cl::ImageGL m_normalImageBuffer;
++	IMAGE_GL_CLASS m_normalImageBuffer;
+ 	BufferProviderPtr m_densityBufferProvider;
+ 	TempBufferPoolPtr m_tempBufferPool;
+ };
+diff --git a/src/GSparseVolumes/CMakeLists.txt b/src/GSparseVolumes/CMakeLists.txt
+index c0b0be0..2e5be4c 100644
+--- a/src/GSparseVolumes/CMakeLists.txt
++++ b/src/GSparseVolumes/CMakeLists.txt
+@@ -11,4 +11,4 @@ include_directories(${GVis_INCLUDE_DIRS})
+ 
+ add_library(GSparseVolumes ${Graphtane_LIB_TYPE} ${SourceFiles})
+ 
+-target_link_libraries (GSparseVolumes ${GGVis_LIBRARIES})
+\ No newline at end of file
++target_link_libraries (GSparseVolumes ${GVis_LIBRARIES})
+\ No newline at end of file
+diff --git a/src/GSparseVolumes/ImageBuffer.h b/src/GSparseVolumes/ImageBuffer.h
+index a08154d..f18f227 100644
+--- a/src/GSparseVolumes/ImageBuffer.h
++++ b/src/GSparseVolumes/ImageBuffer.h
+@@ -19,6 +19,7 @@
+ // THE SOFTWARE.
+ 
+ #pragma once
++#include <cstring>
+ 
+ namespace GSparseVolumes {
+ 
+@@ -60,4 +61,4 @@ private:
+ 
+ typedef ImageBuffer<unsigned char> ImageBufferUChar;
+ 
+-} // namespace GSparseVolumes
+\ No newline at end of file
++} // namespace GSparseVolumes
+diff --git a/src/GSparseVolumes/RenderableVolumeFactory.cpp b/src/GSparseVolumes/RenderableVolumeFactory.cpp
+index 655f1e5..e1f9f89 100644
+--- a/src/GSparseVolumes/RenderableVolumeFactory.cpp
++++ b/src/GSparseVolumes/RenderableVolumeFactory.cpp
+@@ -33,6 +33,8 @@
+ #include <GCommon/Logger.h>
+ 
+ #include <boost/scoped_array.hpp>
++#include <cstring>
++#include <stdexcept>
+ 
+ using namespace GCommon;
+ using namespace GVis;
+@@ -264,4 +266,4 @@ RenderableVolumePtr RenderableVolumeFactory::createRenderableVolume(const Render
+ 	return outputVolume;
+ }
+ 
+-} // namespace GSparseVolumes
+\ No newline at end of file
++} // namespace GSparseVolumes
+diff --git a/src/GSparseVolumes/VolumeTextureAtlasBuilder.cpp b/src/GSparseVolumes/VolumeTextureAtlasBuilder.cpp
+index 8a58529..4cb5df8 100644
+--- a/src/GSparseVolumes/VolumeTextureAtlasBuilder.cpp
++++ b/src/GSparseVolumes/VolumeTextureAtlasBuilder.cpp
+@@ -22,6 +22,8 @@
+ #include "Leaf.h"
+ 
+ #include <GVis/Texture.h>
++#include <cstring>
++#include <stdexcept>
+ 
+ using namespace GSparseVolumes;
+ using namespace GVis;
+@@ -109,4 +111,4 @@ void VolumeTextureAtlasBuilder::addTexture(const Leaf& leaf)
+ 	leaf.toImageBuffer(*m_imageBuffer, glm::ivec3(x * m_itemTextureWidth, y * m_itemTextureWidth, z * m_itemTextureWidth));
+ 
+ 	++m_itemCount;
+-}
+\ No newline at end of file
++}
+diff --git a/src/GSparseVolumesVdb/GridNormalCalculator.cpp b/src/GSparseVolumesVdb/GridNormalCalculator.cpp
+index d2c173b..3833373 100644
+--- a/src/GSparseVolumesVdb/GridNormalCalculator.cpp
++++ b/src/GSparseVolumesVdb/GridNormalCalculator.cpp
+@@ -70,9 +70,11 @@ Vec3UByteGrid::Ptr createNormalGrid(const openvdb::FloatGrid& inputGrid)
+     Vec3UByteGrid::Ptr normalGrid(new Vec3UByteGrid(tree));
+ 	normalGrid->setTransform(const_cast<openvdb::FloatGrid&>(inputGrid).transformPtr());
+ 
+-	openvdb::math::processTypedMap<openvdb::math::Transform, GridNormalCalculator>(const_cast<openvdb::FloatGrid&>(inputGrid).transform(), GridNormalCalculator(*normalGrid, inputGrid));
++    openvdb::math::Transform& transform = const_cast<openvdb::FloatGrid&>(inputGrid).transform();
++    GridNormalCalculator gridNormalCalc(*normalGrid, inputGrid);
++	openvdb::math::processTypedMap<openvdb::math::Transform, GridNormalCalculator>(transform, gridNormalCalc);
+ 	
+ 	return normalGrid;
+ }
+ 
+-} // namespace GSparseVolumes
+\ No newline at end of file
++} // namespace GSparseVolumes
+diff --git a/src/GSparseVolumesVdb/VdbGrid.h b/src/GSparseVolumesVdb/VdbGrid.h
+index 98009d7..4f38a92 100644
+--- a/src/GSparseVolumesVdb/VdbGrid.h
++++ b/src/GSparseVolumesVdb/VdbGrid.h
+@@ -65,7 +65,7 @@ public:
+ 	bool hasNext() const
+ 	{
+ 		VdbInternalNodeIterator i = *this;
+-		return i.next();
++		return i.hasNext();
+ 	}
+ 
+ 	InternalNodeIteratorPtr clone() const
+@@ -135,4 +135,4 @@ private:
+ 	size_t m_internalNodeCount;
+ };
+ 
+-} // namespace GSparseVolumes
+\ No newline at end of file
++} // namespace GSparseVolumes
+diff --git a/src/TestFluid3d/Main.cpp b/src/TestFluid3d/Main.cpp
+index 18e5868..a5dbe02 100644
+--- a/src/TestFluid3d/Main.cpp
++++ b/src/TestFluid3d/Main.cpp
+@@ -47,6 +47,7 @@
+ #include <GVis/Primitives/RectangleMeshFactory.h>
+ 
+ #include <exception>
++#include <cstring>
+ 
+ #include <boost/scoped_array.hpp>
+ 
+@@ -396,4 +397,4 @@ int main(int argc, char** argv)
+ 	{
+ 		defaultLogger()->logLine(e.what());
+ 	}
+-}
+\ No newline at end of file
++}
+diff --git a/src/VdbViewerApp/CMakeLists.txt b/src/VdbViewerApp/CMakeLists.txt
+index 8ac7578..a465901 100644
+--- a/src/VdbViewerApp/CMakeLists.txt
++++ b/src/VdbViewerApp/CMakeLists.txt
+@@ -17,4 +17,4 @@ AddOpenVdbDefinitions()
+ 
+ add_executable(${APP_NAME} ${SourceFiles})
+ 
+-target_link_libraries (${APP_NAME} ${GAppFramework_LIBRARIES} GSparseVolumes GSparseVolumesVdb ${OpenVdb_LIBRARIES})
+\ No newline at end of file
++target_link_libraries (${APP_NAME} ${GAppFramework_LIBRARIES} GSparseVolumes GSparseVolumesVdb ${OpenVdb_LIBRARIES}i ${OpenEXRHalf_LIBRARY_RELEASE})
+\ No newline at end of file
 -- 
 1.8.5.4
 
