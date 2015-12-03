@@ -1,6 +1,6 @@
 /**
 * Impelementation of SARU random number generator using SSE 4.2.
-* The very first and naive version, it is 10% slower than serial code when using g++-9.2 and 22% faster with clang-602.0.49 
+* The very first and naive version, it is 10% slower than serial code when using g++-9.2 and 35% faster with clang-602.0.49 
 * Compare this implementaion towards the standard one (taken from Afshar's paper).
 * References: 
 * Y. Afshar, F. Schmid, A. Pishevar, and S. Worley. Exploiting seeding of random number generators for
@@ -27,7 +27,7 @@ typedef float real;
 
 #ifndef NDEBUG
 template<typename T>
-void p1(const char* s, T i)
+void ps(const char* s, T i)
 {
     printf("%s", s);
     for (int c = 8 * sizeof(T) - 1; c >= 0; c--)
@@ -39,18 +39,18 @@ void p1(const char* s, T i)
     printf("\n");
 }
 
-void p2(const char* s, __m128i& x, int n = 0)
+void pi(const char* s, __m128i& x, int n = 0)
 {
     alignas(16) int32_t buf[4];
     _mm_store_si128((__m128i*)&buf[0], x);
-    p1(s, buf[n]);
+    ps(s, buf[n]);
 }
 
-void pf(const char* s, const __m128& x)
+void pf(const char* s, const __m128& x, int n = 0)
 {
     alignas(16) float buf[4];
     _mm_store_ps(&buf[0], x);
-    p1(s, *(int32_t*)&buf[0]);
+    ps(s, *(int32_t*)&buf[n]);
 }
 #endif
 
@@ -255,41 +255,48 @@ void checkCorrectness()
 void checkSpeed()
 {
     const unsigned int ngenerate = 4*1000;
-    alignas(16) unsigned int seed1[ngenerate];
-    alignas(16) unsigned int seed2[ngenerate];
-    alignas(16) unsigned int seed3[ngenerate];
-    for (unsigned int i = 0; i < ngenerate; ++i) {
-        seed1[i] = (rand()+1)%10;
-        seed2[i] = (rand()+2)%100;
-        seed3[i] = (rand()+3)%1000;
+    alignas(16) unsigned int seed[3*ngenerate];
+    for (unsigned int i = 0; i < 3*ngenerate; ++i) {
+        seed[i] = (rand()+i%3)%(100);
     }
-    
-    { 
+ 
+    {   float tmp = 0.0f; // to prevent optimizing out
         timer t;
         t.start();
         for (int nruns = 0; nruns < 10000; ++nruns)
-            for (int i = 0; i < ngenerate; ++i) {
-                float tmp = randSerial(seed1[i], seed2[i], seed3[i]);
+            for (int i = 0; i < ngenerate; i+=3) {
+                tmp += randSerial(seed[i], seed[i+1], seed[i+2]);
             }
         uint64_t tim = t.stop();
-        std::cout << "Ser " << tim << std::endl;  
+        std::cout << "Ser " << tim << ". " << tmp << std::endl;  
     }
-    
     {
         timer t;
         t.start();
         alignas(16) float buf[4];
+        float tmp = 0.0f;
         for (int nruns = 0; nruns < 10000; ++nruns)
-            for (int i = 0; i < ngenerate; i += 4) {
-                randSSE(&seed1[i], &seed2[i], &seed3[i], &buf[0]);
+            for (int i = 0; i < ngenerate; i += 12) {
+                randSSE(&seed[i], &seed[i+4], &seed[i+8], &buf[0]);
+                tmp += buf[0] + buf[1] + buf[2] +buf[3];
             }
         uint64_t tim = t.stop();
-        std::cout << "SSE " << tim << std::endl;
+        std::cout << "SSE " << tim << ". "<< tmp << std::endl;
     }
 }
 
 void checkSimple()
 {
+
+    __m128 first = _mm_set_ss(1.732050807f);
+    first = _mm_shuffle_ps(first, first, 0x00);
+    __m128i second = _mm_cvtsi32_si128(0X3F38A6ED);
+    second = _mm_shuffle_epi32(second, 0x00);
+    pi("A ", second, 0);
+    pi("A ", second, 1);
+    pi("A ", second, 2);
+    pi("A ", second, 3);   
+ 
     unsigned int buf1[4] = {2, 1, 3, 4};
     unsigned int buf2[4] = {3, 2, 4, 5};
     unsigned int buf3[4] = {4, 3, 5, 6};
@@ -304,6 +311,6 @@ void checkSimple()
 
 int main(int argc, char *argv[])
 {
-    checkSpeed();
+    checkSimple();
     return 0;
 }
