@@ -12,7 +12,7 @@
 #include <bitset>
 #include <cmath>
 #include <cassert>
-#include "timer.hpp"
+#include "../timer.hpp"
 #include "immintrin.h"
 
 #define noinline __attribute__((noinline))
@@ -21,9 +21,7 @@
 typedef float real;
 
 // for debug
-#include <stdio.h>      /* printf */
-#include <string.h>     /* strcat */
-#include <stdlib.h>     /* strtol */
+#include <cstdio>
 
 #ifndef NDEBUG
 template<typename T>
@@ -89,6 +87,7 @@ real randSerial(size_t i, size_t j, size_t idtimestep)
   return 3.464101615f * rnd - 1.732050807f;
 }
 
+#ifdef __SSE__
 __m128 _mm_cvtepu32_ps(const __m128i& v)
 {
     __m128i v2 = _mm_srli_epi32(v, 1);     // v2 = v / 2
@@ -222,6 +221,12 @@ void randSSE(uint32_t* i, uint32_t* j, uint32_t* idtimestep, float* res)
     rnd = _mm_sub_ps(rnd, scal1);
     _mm_store_ps(res, rnd);    
 }
+#endif
+
+#ifdef __AVX__
+
+
+#endif
 
 void checkCorrectness()
 {
@@ -287,15 +292,15 @@ void checkSpeed()
 
 void checkSimple()
 {
-
-    __m128 first = _mm_set_ss(1.732050807f);
-    first = _mm_shuffle_ps(first, first, 0x00);
-    __m128i second = _mm_cvtsi32_si128(0X3F38A6ED);
-    second = _mm_shuffle_epi32(second, 0x00);
-    pi("A ", second, 0);
-    pi("A ", second, 1);
-    pi("A ", second, 2);
-    pi("A ", second, 3);   
+    // an example of loading constants
+    //__m128 first = _mm_set_ss(1.732050807f);
+    //first = _mm_shuffle_ps(first, first, 0x00);
+    //__m128i second = _mm_cvtsi32_si128(0X3F38A6ED);
+    //second = _mm_shuffle_epi32(second, 0x00);
+    //pi("A1 ", second, 0);
+    //pi("A2 ", second, 1);
+    //pi("A3 ", second, 2);
+    //pi("A4 ", second, 3);   
  
     unsigned int buf1[4] = {2, 1, 3, 4};
     unsigned int buf2[4] = {3, 2, 4, 5};
@@ -311,6 +316,6 @@ void checkSimple()
 
 int main(int argc, char *argv[])
 {
-    checkSimple();
+    checkSpeed();
     return 0;
 }

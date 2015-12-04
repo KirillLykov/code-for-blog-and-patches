@@ -1,5 +1,5 @@
 test:	main.cpp
-	clang++ main.cpp -O0 -g3 -msse4.2 -std=c++11 -o test
+	g++ main.cpp -O4 -g3 -mavx2 -std=c++11 -o test
 	
 clean:
 	rm test *.o *.d
